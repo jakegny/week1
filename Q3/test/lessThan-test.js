@@ -1,7 +1,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const fs = require("fs");
-const { groth16 } = require("snarkjs");
+const { groth16, plonk } = require("snarkjs");
 
 function unstringifyBigInts(o) {
   if (typeof o == "string" && /^[0-9]+$/.test(o)) {
@@ -23,34 +23,32 @@ function unstringifyBigInts(o) {
   }
 }
 
-describe.skip("SystemOfEquations", function () {
+describe("LessThan10", function () {
   let Verifier;
   let verifier;
 
   beforeEach(async function () {
-    Verifier = await ethers.getContractFactory("SystemOfEquationsVerifier");
+    //[assignment] insert your script here
+    Verifier = await ethers.getContractFactory("LessThan10Verifier");
     verifier = await Verifier.deploy();
     await verifier.deployed();
   });
 
   it("Should return true for correct proof", async function () {
-    //[assignment] Add comments to explain what each line is doing
+    //[assignment] insert your script here
+    const testVal = "1";
     const { proof, publicSignals } = await groth16.fullProve(
-      {
-        x: ["15", "17", "19"],
-        A: [
-          ["1", "1", "1"],
-          ["1", "2", "3"],
-          ["2", "-1", "1"],
-        ],
-        b: ["51", "106", "32"],
-      },
-      "contracts/bonus/SystemOfEquations/SystemOfEquations_js/SystemOfEquations.wasm",
-      "contracts/bonus/SystemOfEquations/circuit_final.zkey",
+      { in: testVal },
+      "contracts/circuits/LessThan10/LessThan10_js/LessThan10.wasm",
+      "contracts/circuits/LessThan10/circuit_final.zkey",
     );
+    console.log(publicSignals);
+
+    console.log(`${testVal} => `, publicSignals[0]);
 
     const editedPublicSignals = unstringifyBigInts(publicSignals);
     const editedProof = unstringifyBigInts(proof);
+
     const calldata = await groth16.exportSolidityCallData(
       editedProof,
       editedPublicSignals,
@@ -70,15 +68,5 @@ describe.skip("SystemOfEquations", function () {
     const Input = argv.slice(8);
 
     expect(await verifier.verifyProof(a, b, c, Input)).to.be.true;
-  });
-  it("Should return false for invalid proof", async function () {
-    let a = [0, 0];
-    let b = [
-      [0, 0],
-      [0, 0],
-    ];
-    let c = [0, 0];
-    let d = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    expect(await verifier.verifyProof(a, b, c, d)).to.be.false;
   });
 });
